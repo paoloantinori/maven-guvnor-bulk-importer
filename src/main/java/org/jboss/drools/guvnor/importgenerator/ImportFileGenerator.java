@@ -16,22 +16,20 @@
 
 package org.jboss.drools.guvnor.importgenerator;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.Velocity;
+import org.apache.velocity.util.ArrayIterator;
 import org.jboss.drools.guvnor.importgenerator.CmdArgsParser.Parameters;
 import org.jboss.drools.guvnor.importgenerator.utils.FileIOHelper;
 import org.joda.time.DateTime;
@@ -63,14 +61,24 @@ public class ImportFileGenerator implements Constants {
         }
     }
 
-//    protected final transient Logger logger = LoggerFactory.getLogger(getClass());
-    class Logger{
-      public void debug(String msg){System.out.println(msg);}
-      public void error(String msg, Throwable t){System.err.println(msg); t.printStackTrace();}
-      public void trace(String msg){System.out.println(msg);}
+    //    protected final transient Logger logger = LoggerFactory.getLogger(getClass());
+    class Logger {
+        public void debug(String msg) {
+            System.out.println(msg);
+        }
+
+        public void error(String msg, Throwable t) {
+            System.err.println(msg);
+            t.printStackTrace();
+        }
+
+        public void trace(String msg) {
+            System.out.println(msg);
+        }
     }
-    protected final Logger logger=new Logger();
-    
+
+    protected final Logger logger = new Logger();
+
     private CmdArgsParser options = null;
     private String BASE_DIR = System.getProperty("user.dir");
 
@@ -86,6 +94,12 @@ public class ImportFileGenerator implements Constants {
      * @throws IOException
      */
     public String generateImportFile(Map<String, PackageFile> packages) throws IOException {
+
+        Properties props = new Properties();
+        props.put("file.resource.loader.path", "/data/repositories/github/personal/maven-guvnor-bulk-importer/src/main/resources/templates");
+        Velocity.init(props);
+        VelocityContext velocityContext = null;
+
         // go through each replacer definition creating drl template replacements
         //TODO: what is the org.drools.io.RuleSetReader ??? is this what Guvnor uses this to read the .drl file parts?
         String draftStateReferenceUUID = GeneratedData.generateUUID();
@@ -95,7 +109,8 @@ public class ImportFileGenerator implements Constants {
         int cok = 0, cerror = 0, derror = 0, terror = 0, total = 0;
 
         StringBuffer packageContents = new StringBuffer();
-        StringBuffer snapshotContents = new StringBuffer();
+        //StringBuffer snapshotContents = new StringBuffer();
+        BufferedWriter snapshotContents = new BufferedWriter(new FileWriter("paolo.tmp"));
         double i = 0;
         for (Map.Entry<String, PackageFile> packagesEntry : packages.entrySet()) {
             String packageName = packagesEntry.getKey();
@@ -117,7 +132,7 @@ public class ImportFileGenerator implements Constants {
             for (Map.Entry<String, Rule> rulesEntry : rules.entrySet()) {
 //                String ruleName = rulesEntry.getKey();
                 Rule rule = (Rule) rulesEntry.getValue();
-                System.out.println("RULE = "+ rule.getRuleName());
+                System.out.println("RULE = " + rule.getRuleName());
                 context.put("file", rule.getFile());
                 context.put("rule", rule);
                 String format = FilenameUtils.getExtension(rule.getFile().getName());
@@ -127,6 +142,7 @@ public class ImportFileGenerator implements Constants {
 
                 //inject the snapshot rule values in the the snapshot rule template
                 snapshotRuleContents.append(MessageFormat.format(readTemplate(MessageFormat.format(TEMPLATES_SNAPSHOT_RULE, format)), getRuleObjects(context/*, RuleObjectType.SNAPSHOT_RULE*/)));
+                context.remove(rule);
             }
 
             String modelTemplate = readTemplate(TEMPLATES_MODEL);
@@ -147,9 +163,20 @@ public class ImportFileGenerator implements Constants {
             packageContents.append(MessageFormat.format(packageTemplate, getPackageObjects(context, ruleContents, PackageObjectType.PACKAGE)));
 
             //inject the snapshot values into the snapshot contents
-            if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
-                snapshotContents.append(MessageFormat.format(readTemplate(TEMPLATES_SNAPSHOT), getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT)));
-            }
+//            if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
+//                snapshotContents.append(MessageFormat.format(readTemplate(TEMPLATES_SNAPSHOT), getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT)));
+//            }
+
+            Object[] values = getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT);
+
+            velocityContext = new VelocityContext();
+            velocityContext.put("values", values);
+
+            Template template = Velocity.getTemplate("template_snapshot.xml"     );
+
+            template.merge(velocityContext, snapshotContents);
+            velocityContext = null;
+
 
             //display status of each packageFile
             total++;
@@ -171,14 +198,36 @@ public class ImportFileGenerator implements Constants {
             }
         }
 
+        InputStream is = new FileInputStream("paolo.tmp");
+        String strSnapshotContent = IOUtils.toString(is) ;
+       logger.debug(">>>>>> paolo: " + strSnapshotContent.substring(0,100));
+
         //replace the placemarkers with the package data
-        String parentContents = MessageFormat.format(readTemplate(TEMPLATES_PARENT), new Object[]{
+//        String parentContents = MessageFormat.format(readTemplate(TEMPLATES_PARENT), new Object[]{
+//                packageContents
+//                , categoryReferenceUUID
+//                , draftStateReferenceUUID
+//                , GeneratedData.getTimestamp()
+//                , getSnapshotContents(new StringBuffer(strSnapshotContent))
+//        });
+
+        BufferedWriter parentContents = new BufferedWriter(new FileWriter("paolo2.tmp"));
+
+        velocityContext = new VelocityContext();
+        velocityContext.put("values", new Object[]{
                 packageContents
                 , categoryReferenceUUID
                 , draftStateReferenceUUID
                 , GeneratedData.getTimestamp()
-                , getSnapshotContents(snapshotContents)
+                , getSnapshotContents(new StringBuffer(strSnapshotContent))
         });
+
+        Template template = Velocity.getTemplate(TEMPLATES_PARENT     );
+
+        template.merge(velocityContext, parentContents);
+        velocityContext = null;
+        template.process();
+
 
         //write a summary report
         logger.debug("==========================");
@@ -193,7 +242,9 @@ public class ImportFileGenerator implements Constants {
         logger.debug(" Total:               " + NumberFormat.getInstance().format(total));
         logger.debug("==========================");
 
-        return parentContents;
+        is = new FileInputStream("paolo2.tmp");
+        String strParentContents = IOUtils.toString(is) ;
+        return strParentContents;
     }
 
     /**
@@ -237,7 +288,7 @@ public class ImportFileGenerator implements Constants {
                 try {
                     return FileUtils.readFileToString(file);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Error reading file (" + file +")", e);
+                    throw new IllegalArgumentException("Error reading file (" + file + ")", e);
                 }
             }
         } catch (IOException e) {

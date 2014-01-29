@@ -22,7 +22,7 @@
   <!--</appender>-->
 
   <!-- The actual log level gets overwritten by ImportFileGenerator's command line arguments -->
-  <logger name="org.jboss.drools.guvnor.importgenerator" level="info"/>
+  <logger name="org.jboss.drools.guvnor.importgenerator" level="debug"/>
 
   <root level="warn">
     <appender-ref ref="consoleAppender" />

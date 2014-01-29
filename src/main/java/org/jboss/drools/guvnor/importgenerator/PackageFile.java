@@ -56,6 +56,7 @@ import org.drools.rule.Package;
 import org.jboss.drools.guvnor.importgenerator.CmdArgsParser.Parameters;
 import org.jboss.drools.guvnor.importgenerator.utils.DroolsHelper;
 import org.jboss.drools.guvnor.importgenerator.utils.FileIOHelper;
+import org.mvel2.templates.util.io.StringBuilderStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,13 +195,10 @@ public class PackageFile implements Comparator<Integer> {
         for (int i = 0; i < ruleFiles.length; i++) {
             File file = ruleFiles[i];
             if (file.getName().endsWith(".drl")) {
-              System.out.println("XXXXXXX found DRL");  
               parseDrlFile(file, result, options);
             } else if (file.getName().endsWith(".xls")) {
-              System.out.println("XXXXXXX found XLS");
                 parseXlsFile(file, result, options);
             } else if (file.getName().endsWith(".bpmn")) {
-              System.out.println("XXXXXXX found BPM");
                 parseBpmFile(file, result, options);
             }
         }
