@@ -16,14 +16,7 @@
 
 package org.jboss.drools.guvnor.importgenerator;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +30,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -382,6 +376,19 @@ public class PackageFile implements Comparator<Integer> {
         } else {
             return new byte[]{};
         }
+    }
+
+
+
+    public File toFile(File tmp) throws IOException {
+        if (pkg != null) {
+            OutputStream os = new Base64OutputStream(new FileOutputStream(tmp));
+            DroolsObjectOutputStream doos = new DroolsObjectOutputStream(os);
+            doos.writeObject(pkg);
+            os.flush();
+            os.close();
+        }
+        return tmp;
     }
 
     public void addRuleFile(String ruleName, File ruleFile) {

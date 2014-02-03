@@ -227,8 +227,12 @@ public class ImportFileGenerator implements Constants {
                 , categoryReferenceUUID
                 , draftStateReferenceUUID
                 , GeneratedData.getTimestamp()
-                , getSnapshotContents(new StringBuffer(strSnapshotContent))
+                , getSnapshotContents(strSnapshotContent)
         });
+
+        strSnapshotContent = null;
+        packageContents = null;
+
 
         Template template = Velocity.getTemplate(TEMPLATES_PARENT);
 
@@ -237,6 +241,8 @@ public class ImportFileGenerator implements Constants {
         velocityContext = null;
         parentContents.flush();
         parentContents.close();
+
+        parentContents = null;
 
 
 
@@ -287,6 +293,12 @@ public class ImportFileGenerator implements Constants {
             return snapshotContents;
         }
         return new StringBuffer("");
+    }
+    private String getSnapshotContents(String snapshotContents) {
+        if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
+            return snapshotContents;
+        }
+        return "";
     }
 
     private String readTemplate(String templateConst) {
@@ -345,7 +357,8 @@ public class ImportFileGenerator implements Constants {
                 objects.add((String) context.get("draftStateReferenceUUID"));
                 objects.add(GeneratedData.getTimestamp()); //7
                 //objects.add(FileIOHelper.toBase64(DroolsHelper.compileRuletoPKG(packageFile))); //8
-                objects.add(FileIOHelper.toBase64(packageFile.toByteArray()));
+                //objects.add(FileIOHelper.toBase64(packageFile.toByteArray()));
+                objects.add(FileIOHelper.toBase64(packageFile.toFile(File.createTempFile("package", "tmp"))));
                 objects.add(GeneratedData.generateUUID()); //snapshot uuid
                 objects.add(GeneratedData.generateUUID()); //snapshot base+predecessor uuid
                 objects.add(GeneratedData.generateUUID()); //assets uuid

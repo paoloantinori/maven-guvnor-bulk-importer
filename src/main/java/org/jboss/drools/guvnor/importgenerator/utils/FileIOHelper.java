@@ -16,11 +16,10 @@
 
 package org.jboss.drools.guvnor.importgenerator.utils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+
+import org.apache.commons.codec.binary.Base64OutputStream;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.codec.binary.Base64;
@@ -56,6 +55,14 @@ public class FileIOHelper {
         System.out.println("Input size: " + b.length );
         byte[] b64 = Base64.encodeBase64(b);
         return new String(b64, FORMAT);
+    }
+
+    public static String toBase64(File file) throws UnsupportedEncodingException {
+        try {
+            return IOUtils.toString(new FileInputStream(file))    ;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String fromBase64(byte[] b64) throws UnsupportedEncodingException {
