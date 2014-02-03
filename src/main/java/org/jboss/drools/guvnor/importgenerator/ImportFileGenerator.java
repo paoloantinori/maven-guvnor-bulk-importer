@@ -110,7 +110,10 @@ public class ImportFileGenerator implements Constants {
 
         StringBuffer packageContents = new StringBuffer();
         //StringBuffer snapshotContents = new StringBuffer();
-        BufferedWriter snapshotContents = new BufferedWriter(new FileWriter("paolo.tmp"));
+        File fileSnapshot = new File("fileSnapshot.tmp");
+        File fileParent = new File("fileParent.tmp");
+
+        BufferedWriter snapshotContents = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileSnapshot), "UTF-8" ));
         double i = 0;
         for (Map.Entry<String, PackageFile> packagesEntry : packages.entrySet()) {
             String packageName = packagesEntry.getKey();
@@ -166,17 +169,20 @@ public class ImportFileGenerator implements Constants {
 //            if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
 //                snapshotContents.append(MessageFormat.format(readTemplate(TEMPLATES_SNAPSHOT), getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT)));
 //            }
+            if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
+                Object[] values = getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT);
 
-            Object[] values = getPackageObjects(context, snapshotRuleContents, PackageObjectType.PACKAGE_SNAPSHOT);
+                velocityContext = new VelocityContext();
+                velocityContext.put("values", values);
 
-            velocityContext = new VelocityContext();
-            velocityContext.put("values", values);
+                Template template = Velocity.getTemplate(TEMPLATES_SNAPSHOT);
 
-            Template template = Velocity.getTemplate("template_snapshot.xml"     );
+                template.merge(velocityContext, snapshotContents);
+                template.process();
+                //velocityContext = null;
+                snapshotContents.flush();
 
-            template.merge(velocityContext, snapshotContents);
-            velocityContext = null;
-
+            }
 
             //display status of each packageFile
             total++;
@@ -198,9 +204,11 @@ public class ImportFileGenerator implements Constants {
             }
         }
 
-        InputStream is = new FileInputStream("paolo.tmp");
-        String strSnapshotContent = IOUtils.toString(is) ;
-       logger.debug(">>>>>> paolo: " + strSnapshotContent.substring(0,100));
+        snapshotContents.close();
+
+        InputStream is = new FileInputStream(fileSnapshot);
+        String strSnapshotContent = IOUtils.toString(is,"UTF-8" );
+
 
         //replace the placemarkers with the package data
 //        String parentContents = MessageFormat.format(readTemplate(TEMPLATES_PARENT), new Object[]{
@@ -211,7 +219,7 @@ public class ImportFileGenerator implements Constants {
 //                , getSnapshotContents(new StringBuffer(strSnapshotContent))
 //        });
 
-        BufferedWriter parentContents = new BufferedWriter(new FileWriter("paolo2.tmp"));
+        BufferedWriter parentContents = new BufferedWriter(new FileWriter(fileParent));
 
         velocityContext = new VelocityContext();
         velocityContext.put("values", new Object[]{
@@ -222,11 +230,15 @@ public class ImportFileGenerator implements Constants {
                 , getSnapshotContents(new StringBuffer(strSnapshotContent))
         });
 
-        Template template = Velocity.getTemplate(TEMPLATES_PARENT     );
+        Template template = Velocity.getTemplate(TEMPLATES_PARENT);
 
         template.merge(velocityContext, parentContents);
-        velocityContext = null;
         template.process();
+        velocityContext = null;
+        parentContents.flush();
+        parentContents.close();
+
+
 
 
         //write a summary report
@@ -242,8 +254,8 @@ public class ImportFileGenerator implements Constants {
         logger.debug(" Total:               " + NumberFormat.getInstance().format(total));
         logger.debug("==========================");
 
-        is = new FileInputStream("paolo2.tmp");
-        String strParentContents = IOUtils.toString(is) ;
+        is = new FileInputStream(fileParent);
+        String strParentContents = IOUtils.toString(is);
         return strParentContents;
     }
 
