@@ -97,6 +97,8 @@ public class ImportFileGenerator implements Constants {
 
         Properties props = new Properties();
         props.put("file.resource.loader.path", "/data/repositories/github/personal/maven-guvnor-bulk-importer/src/main/resources/templates");
+        //disable creation of velocity.log file
+        props.put("runtime.log.logsystem.class", "org.apache.velocity.runtime.log.NullLogSystem");
 
         Velocity.init(props);
         VelocityContext velocityContext = null;
