@@ -24,7 +24,8 @@
     <properties>
         <guvnor.version>guvnor.version</guvnor.version>
         <guvnor.server.url>http://localhost:8080/guvnor-${guvnor.version}</guvnor.server.url>
-        <drools.version>5.3.1.Final</drools.version>
+        <brms.version>5.3.1.GA</brms.version>
+        <drools.version>5.3.1.BRMS</drools.version>
     </properties>
 
     <build>
@@ -237,30 +238,28 @@
             <artifactId>velocity</artifactId>
             <version>1.7</version>
         </dependency>
-
-
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>knowledge-api</artifactId>
-            <version>${drools.version}</version>
+            <version>5.3.1.BRMS</version>
         </dependency>
-
+    
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>drools-core</artifactId>
-            <version>${drools.version}</version>
+            <version>5.3.1.BRMS</version>
         </dependency>
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>drools-compiler</artifactId>
-            <version>${drools.version}</version>
+            <version>5.3.1.BRMS</version>
         </dependency>
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>drools-decisiontables</artifactId>
-            <version>${drools.version}</version>
+            <version>5.3.1.BRMS</version>
         </dependency>
-
+        
         <!-- extra deps for building from this project -->
         <dependency>
             <groupId>org.drools</groupId>
