@@ -97,6 +97,7 @@ public class ImportFileGenerator implements Constants {
 
         Properties props = new Properties();
         props.put("file.resource.loader.path", "/data/repositories/github/personal/maven-guvnor-bulk-importer/src/main/resources/templates");
+
         Velocity.init(props);
         VelocityContext velocityContext = null;
 
@@ -110,8 +111,8 @@ public class ImportFileGenerator implements Constants {
 
         StringBuffer packageContents = new StringBuffer();
         //StringBuffer snapshotContents = new StringBuffer();
-        File fileSnapshot = new File("fileSnapshot.tmp");
-        File fileParent = new File("fileParent.tmp");
+        File fileSnapshot = File.createTempFile("fileSnapshot", "tmp");
+        File fileParent = File.createTempFile("fileParent", "tmp");
 
         BufferedWriter snapshotContents = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileSnapshot), "UTF-8" ));
         double i = 0;
