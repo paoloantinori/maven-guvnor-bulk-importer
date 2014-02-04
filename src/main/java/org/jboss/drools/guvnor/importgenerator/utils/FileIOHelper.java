@@ -18,14 +18,13 @@ package org.jboss.drools.guvnor.importgenerator.utils;
 
 import java.io.*;
 
-import org.apache.commons.codec.binary.Base64InputStream;
-import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.slf4j.LoggerFactory;
+
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeUtility;
 
 /**
  * File IO helper class for reading/writing files and converting to/from base64
@@ -55,24 +54,35 @@ public class FileIOHelper {
     }
 
     public static String toBase64(byte[] b) throws UnsupportedEncodingException {
-        System.out.println("Input size: " + b.length );
+        System.out.println("Input size: " + b.length);
         byte[] b64 = Base64.encodeBase64(b);
         return new String(b64, FORMAT);
     }
 
     public static String toBase64(File file) throws IOException {
-
-        InputStream is = new Base64InputStream(new FileInputStream(file))          ;
+        InputStream is = null;
+        OutputStream base64OutputStream = null;
         try {
-            return IOUtils.toString(is, "UTF-8")    ;
+            File tmp = File.createTempFile("test", "tmp");
+
+            base64OutputStream = MimeUtility.encode(new FileOutputStream(tmp), "base64");
+
+            IOUtils.copy(new FileInputStream(file), base64OutputStream);
+
+            is = new FileInputStream(tmp);
+
+            return IOUtils.toString(is, FORMAT);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }    finally {
-            is.close();
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        } finally {
+            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(base64OutputStream);
         }
     }
 
- 
+
     public static String fromBase64(byte[] b64) throws UnsupportedEncodingException {
         byte[] b = Base64.decodeBase64(b64);
         return new String(b, FORMAT);
