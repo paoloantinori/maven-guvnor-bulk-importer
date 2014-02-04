@@ -30,6 +30,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -381,12 +382,14 @@ public class PackageFile implements Comparator<Integer> {
 
 
     public File toFile(File tmp) throws IOException {
+
         if (pkg != null) {
-            OutputStream os = new FileOutputStream(tmp);
+            OutputStream os = new Base64OutputStream(new FileOutputStream(tmp), true, -1, null);
+
             DroolsObjectOutputStream doos = new DroolsObjectOutputStream(os);
             doos.writeObject(pkg);
-            doos.flush();
-            doos.close();
+
+            IOUtils.closeQuietly(doos);
         }
         return tmp;
     }
