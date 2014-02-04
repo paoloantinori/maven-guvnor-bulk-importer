@@ -18,6 +18,7 @@ package org.jboss.drools.guvnor.importgenerator.utils;
 
 import java.io.*;
 
+import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -47,6 +48,8 @@ public class FileIOHelper {
             throw new IllegalArgumentException("Error reading file (" + file + ")", e);
         }
         byte[] base64bytes = Base64.encodeBase64(bytes);
+        bytes = null;
+        System.gc();
         String base64String = new String(base64bytes, FORMAT);
         return base64String;
     }
@@ -57,14 +60,19 @@ public class FileIOHelper {
         return new String(b64, FORMAT);
     }
 
-    public static String toBase64(File file) throws UnsupportedEncodingException {
+    public static String toBase64(File file) throws IOException {
+
+        InputStream is = new Base64InputStream(new FileInputStream(file))          ;
         try {
-            return IOUtils.toString(new FileInputStream(file))    ;
+            return IOUtils.toString(is, "UTF-8")    ;
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }    finally {
+            is.close();
         }
     }
 
+ 
     public static String fromBase64(byte[] b64) throws UnsupportedEncodingException {
         byte[] b = Base64.decodeBase64(b64);
         return new String(b, FORMAT);

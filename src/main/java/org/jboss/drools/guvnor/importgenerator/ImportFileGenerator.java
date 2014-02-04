@@ -360,7 +360,8 @@ public class ImportFileGenerator implements Constants {
                 objects.add((String) context.get("draftStateReferenceUUID"));
                 objects.add(GeneratedData.getTimestamp()); //7
                 //objects.add(FileIOHelper.toBase64(DroolsHelper.compileRuletoPKG(packageFile))); //8
-                //objects.add(FileIOHelper.toBase64(packageFile.toByteArray()));
+                //      objects.add(FileIOHelper.toBase64(packageFile.toByteArray()));
+                //objects.add(FileIOHelper.readAllAsBase64(packageFile.toFile(File.createTempFile("package", "tmp"))));
                 objects.add(FileIOHelper.toBase64(packageFile.toFile(File.createTempFile("package", "tmp"))));
                 objects.add(GeneratedData.generateUUID()); //snapshot uuid
                 objects.add(GeneratedData.generateUUID()); //snapshot base+predecessor uuid

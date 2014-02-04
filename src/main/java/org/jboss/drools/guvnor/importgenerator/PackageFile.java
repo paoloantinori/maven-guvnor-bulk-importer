@@ -54,6 +54,7 @@ import org.mvel2.templates.util.io.StringBuilderStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
  * Represents a drl package file found in the file system
  */
@@ -185,11 +186,11 @@ public class PackageFile implements Comparator<Integer> {
     }
 
     private static PackageFile parseRuleFiles(PackageFile result, File[] ruleFiles, CmdArgsParser options) throws IOException {
-      System.out.println("XXXXX file.length = "+ ruleFiles.length + "="+ ruleFiles[0].getName());
+        System.out.println("XXXXX file.length = " + ruleFiles.length + "=" + ruleFiles[0].getName());
         for (int i = 0; i < ruleFiles.length; i++) {
             File file = ruleFiles[i];
             if (file.getName().endsWith(".drl")) {
-              parseDrlFile(file, result, options);
+                parseDrlFile(file, result, options);
             } else if (file.getName().endsWith(".xls")) {
                 parseXlsFile(file, result, options);
             } else if (file.getName().endsWith(".bpmn")) {
@@ -200,16 +201,16 @@ public class PackageFile implements Comparator<Integer> {
     }
 
     private static void parseBpmFile(File file, PackageFile packageFile, CmdArgsParser options) throws FileNotFoundException, UnsupportedEncodingException {
-      String content;
-      try {
-          content = FileUtils.readFileToString(file);
-      } catch (IOException e) {
-          throw new IllegalArgumentException("Error reading file (" + file +")", e);
-      }
-      packageFile.getRules().put(file.getName(), new Rule(file.getName().substring(0, file.getName().lastIndexOf(".")), content, file));
-      packageFile.getRuleFiles().put(file.getName(), file);
-  }
-    
+        String content;
+        try {
+            content = FileUtils.readFileToString(file);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Error reading file (" + file + ")", e);
+        }
+        packageFile.getRules().put(file.getName(), new Rule(file.getName().substring(0, file.getName().lastIndexOf(".")), content, file));
+        packageFile.getRuleFiles().put(file.getName(), file);
+    }
+
     private static void parseXlsFile(File file, PackageFile packageFile, CmdArgsParser options) throws FileNotFoundException, UnsupportedEncodingException {
         String content = FileIOHelper.readAllAsBase64(file);
         packageFile.getRules().put(file.getName(), new Rule(file.getName().substring(0, file.getName().lastIndexOf(".")), content, file));
@@ -222,7 +223,7 @@ public class PackageFile implements Comparator<Integer> {
         try {
             content = FileUtils.readFileToString(file);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Error reading file (" + file +")", e);
+            throw new IllegalArgumentException("Error reading file (" + file + ")", e);
         }
         int packageLoc = content.indexOf(PH_PACKAGE_START); // usually 0
         int ruleLoc = getRuleStart(content, 0);// variable
@@ -254,42 +255,42 @@ public class PackageFile implements Comparator<Integer> {
      * @throws IOException
      */
     public void buildPackage() throws IOException {
-      KnowledgeBuilder builder=KnowledgeBuilderFactory.newKnowledgeBuilder();
-      
-      for (Map.Entry<String, File> e:getRuleFiles().entrySet()) {
-        if (FUNCTIONS_FILE != null) {
-          File functionsFile = new File(e.getValue().getParentFile().getPath(), FUNCTIONS_FILE);
-          if (functionsFile.exists())
-            builder.add(ResourceFactory.newFileResource(functionsFile), ResourceType.DRL);
-        }
-        
-        String drl=null;
-        if ("xls".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())){
-          drl=new SpreadsheetCompiler().compile(ResourceFactory.newFileResource(e.getValue()).getInputStream(), InputType.XLS);
-        }else if ("drl".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())){
-          drl=IOUtils.toString(ResourceFactory.newFileResource(e.getValue()).getInputStream());
-        }else if ("bpmn".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())){
+        KnowledgeBuilder builder = KnowledgeBuilderFactory.newKnowledgeBuilder();
+
+        for (Map.Entry<String, File> e : getRuleFiles().entrySet()) {
+            if (FUNCTIONS_FILE != null) {
+                File functionsFile = new File(e.getValue().getParentFile().getPath(), FUNCTIONS_FILE);
+                if (functionsFile.exists())
+                    builder.add(ResourceFactory.newFileResource(functionsFile), ResourceType.DRL);
+            }
+
+            String drl = null;
+            if ("xls".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())) {
+                drl = new SpreadsheetCompiler().compile(ResourceFactory.newFileResource(e.getValue()).getInputStream(), InputType.XLS);
+            } else if ("drl".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())) {
+                drl = IOUtils.toString(ResourceFactory.newFileResource(e.getValue()).getInputStream());
+            } else if ("bpmn".equals(FilenameUtils.getExtension(e.getValue().getName()).toLowerCase())) {
 //          String bpmn2=IOUtils.toString(ResourceFactory.newFileResource(e.getValue()).getInputStream());
 //          System.out.println("BPMN = "+bpmn2);
 //          builder.add(ResourceFactory.newByteArrayResource(bpmn2.getBytes()), ResourceType.BPMN2);
-          builder.add(ResourceFactory.newFileResource(e.getValue()), ResourceType.BPMN2);
+                builder.add(ResourceFactory.newFileResource(e.getValue()), ResourceType.BPMN2);
+            }
+            if (null != drl)
+                builder.add(ResourceFactory.newByteArrayResource(drl.getBytes()), ResourceType.DRL);
         }
-        if (null!=drl)
-          builder.add(ResourceFactory.newByteArrayResource(drl.getBytes()), ResourceType.DRL);
-      }
-      if (builder.hasErrors()){
-        for (KnowledgeBuilderError error:builder.getErrors())
-          addCompilationError(error.getMessage());
-      }
-      
-      if (builder.getKnowledgePackages().size()!=1){
-        String x="";
-        for(KnowledgePackage p:builder.getKnowledgePackages())
-          x+=" "+p.getName()+" ";
-        addCompilationError(builder.getKnowledgePackages().size()+" ["+x+"] packages were built from "+ name +"; Expected 1. Please check your package and event names are the same, and all files have the same package name.");
-      }else{
-        this.pkg=builder.getKnowledgePackages().iterator().next();
-      }
+        if (builder.hasErrors()) {
+            for (KnowledgeBuilderError error : builder.getErrors())
+                addCompilationError(error.getMessage());
+        }
+
+        if (builder.getKnowledgePackages().size() != 1) {
+            String x = "";
+            for (KnowledgePackage p : builder.getKnowledgePackages())
+                x += " " + p.getName() + " ";
+            addCompilationError(builder.getKnowledgePackages().size() + " [" + x + "] packages were built from " + name + "; Expected 1. Please check your package and event names are the same, and all files have the same package name.");
+        } else {
+            this.pkg = builder.getKnowledgePackages().iterator().next();
+        }
     }
     /*
     public void buildPackage() throws IOException {
@@ -325,7 +326,7 @@ public class PackageFile implements Comparator<Integer> {
     }
 
 */
-    
+
 
     class ImportsComparator implements Comparator<String> {
         public int compare(String o1, String o2) {
@@ -379,14 +380,13 @@ public class PackageFile implements Comparator<Integer> {
     }
 
 
-
     public File toFile(File tmp) throws IOException {
         if (pkg != null) {
-            OutputStream os = new Base64OutputStream(new FileOutputStream(tmp));
+            OutputStream os = new FileOutputStream(tmp);
             DroolsObjectOutputStream doos = new DroolsObjectOutputStream(os);
             doos.writeObject(pkg);
-            os.flush();
-            os.close();
+            doos.flush();
+            doos.close();
         }
         return tmp;
     }
