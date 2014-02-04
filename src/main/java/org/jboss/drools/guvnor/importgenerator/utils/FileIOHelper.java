@@ -62,9 +62,10 @@ public class FileIOHelper {
 
     public static String toBase64(File file) throws IOException {
 
-        InputStream is = new Base64InputStream(new FileInputStream(file))          ;
+        InputStream is = new Base64InputStream(new FileInputStream(file), true, -1, null)          ;
+
         try {
-            return IOUtils.toString(is, "UTF-8")    ;
+            return IOUtils.toString(is, FORMAT)    ;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }    finally {
