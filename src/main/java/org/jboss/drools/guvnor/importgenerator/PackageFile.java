@@ -381,6 +381,12 @@ public class PackageFile implements Comparator<Integer> {
     }
 
 
+    /**
+     * Serialize a package to file, encoding on the fly
+     * @param tmp
+     * @return
+     * @throws IOException
+     */
     public File toFile(File tmp) throws IOException {
 
         if (pkg != null) {

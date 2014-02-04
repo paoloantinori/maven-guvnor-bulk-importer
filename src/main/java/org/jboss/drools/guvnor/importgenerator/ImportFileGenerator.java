@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ImportFileGenerator implements Constants {
 
+    public static final String UTF_8 = "UTF-8";
+
     public static void main(String[] args) {
         CmdArgsParser options = new CmdArgsParser();
         options.parse(args);
@@ -93,7 +95,7 @@ public class ImportFileGenerator implements Constants {
      * @return
      * @throws IOException
      */
-    public String generateImportFile(Map<String, PackageFile> packages) throws IOException {
+    public File generateImportFile(Map<String, PackageFile> packages, File guvnorImportFile) throws IOException {
 
         Properties props = new Properties();
         props.put("file.resource.loader.path", "/data/repositories/github/personal/maven-guvnor-bulk-importer/src/main/resources/templates");
@@ -113,10 +115,10 @@ public class ImportFileGenerator implements Constants {
 
         StringBuffer packageContents = new StringBuffer();
         //StringBuffer snapshotContents = new StringBuffer();
-        File fileSnapshot = File.createTempFile("fileSnapshot", "tmp");
-        File fileParent = File.createTempFile("fileParent", "tmp");
+        File fileSnapshot = File.createTempFile("fileSnapshot", ".tmp");
+        File fileParent = guvnorImportFile;
 
-        BufferedWriter snapshotContents = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileSnapshot), "UTF-8" ));
+        BufferedWriter snapshotContents = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileSnapshot), UTF_8));
         double i = 0;
         for (Map.Entry<String, PackageFile> packagesEntry : packages.entrySet()) {
             String packageName = packagesEntry.getKey();
@@ -207,10 +209,17 @@ public class ImportFileGenerator implements Constants {
             }
         }
 
-        snapshotContents.close();
+        packages = null;
 
-        InputStream is = new FileInputStream(fileSnapshot);
-        String strSnapshotContent = IOUtils.toString(is,"UTF-8" );
+        System.gc();
+
+        IOUtils.closeQuietly(snapshotContents);
+        snapshotContents = null;
+
+        InputStream is = new BufferedInputStream(new FileInputStream(fileSnapshot));
+        String strSnapshotContent = IOUtils.toString(is, UTF_8);
+        IOUtils.closeQuietly(is);
+        is = null;
 
 
         //replace the placemarkers with the package data
@@ -222,7 +231,6 @@ public class ImportFileGenerator implements Constants {
 //                , getSnapshotContents(new StringBuffer(strSnapshotContent))
 //        });
 
-        BufferedWriter parentContents = new BufferedWriter(new FileWriter(fileParent));
 
         velocityContext = new VelocityContext();
         velocityContext.put("values", new Object[]{
@@ -239,15 +247,18 @@ public class ImportFileGenerator implements Constants {
 
         Template template = Velocity.getTemplate(TEMPLATES_PARENT);
 
+        BufferedWriter parentContents = new BufferedWriter(new FileWriter(fileParent));
+
         template.merge(velocityContext, parentContents);
         template.process();
-        velocityContext = null;
         parentContents.flush();
-        parentContents.close();
+
+        velocityContext = null;
+
+
+        IOUtils.closeQuietly(parentContents);
 
         parentContents = null;
-
-
 
 
         //write a summary report
@@ -263,9 +274,7 @@ public class ImportFileGenerator implements Constants {
         logger.debug(" Total:               " + NumberFormat.getInstance().format(total));
         logger.debug("==========================");
 
-        is = new FileInputStream(fileParent);
-        String strParentContents = IOUtils.toString(is);
-        return strParentContents;
+        return fileParent;
     }
 
     /**
@@ -297,6 +306,7 @@ public class ImportFileGenerator implements Constants {
         }
         return new StringBuffer("");
     }
+
     private String getSnapshotContents(String snapshotContents) {
         if (options.getOption(Parameters.OPTIONS_SNAPSHOT_NAME) != null) {
             return snapshotContents;
@@ -421,12 +431,6 @@ public class ImportFileGenerator implements Constants {
             logger.debug("Scanning directories...");
             Map<String, PackageFile> details = PackageFile.buildPackages(options);
 
-            logger.debug("Generating 'Guvnor import data'...");
-            String guvnorImport = generateImportFile(details);
-            File guvnorImportFile = getFile(options.getOption(Parameters.OPTIONS_OUTPUT_FILE));
-            logger.debug("Writing 'Guvnor import data to disk' (" + guvnorImportFile.getAbsolutePath() + ")");
-            FileIOHelper.write(guvnorImport, guvnorImportFile);
-
             if (options.getOption(Parameters.OPTIONS_KAGENT_CHANGE_SET_FILE) != null) {
                 logger.debug("Generating 'Knowledge agent changeset' data...");
                 String kagentChangeSet = generateKnowledgeAgentInitFile(details);
@@ -434,6 +438,15 @@ public class ImportFileGenerator implements Constants {
                 logger.debug("Writing 'Knowledge agent changeset' to disk (" + kagentChangeSetFile.getAbsolutePath() + ")");
                 FileIOHelper.write(kagentChangeSet, kagentChangeSetFile);
             }
+
+            logger.debug("Generating 'Guvnor import data'...");
+
+            File guvnorImportFile = getFile(options.getOption(Parameters.OPTIONS_OUTPUT_FILE));
+
+            generateImportFile(details, guvnorImportFile);
+            logger.debug("Writing 'Guvnor import data to disk' (" + guvnorImportFile.getAbsolutePath() + ")");
+
+
 
             DateTime end = new DateTime(System.currentTimeMillis());
             int m = Minutes.minutesBetween(start, end).getMinutes();

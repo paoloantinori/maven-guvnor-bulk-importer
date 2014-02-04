@@ -61,8 +61,7 @@ public class FileIOHelper {
     }
 
     public static String toBase64(File file) throws IOException {
-        InputStream is =     new FileInputStream(file);
-        System.gc();
+        InputStream is = new BufferedInputStream(new FileInputStream(file));
         try {
             return IOUtils.toString(is, FORMAT);
         } catch (IOException e) {
