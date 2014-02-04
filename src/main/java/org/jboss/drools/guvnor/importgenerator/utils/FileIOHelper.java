@@ -55,25 +55,25 @@ public class FileIOHelper {
     }
 
     public static String toBase64(byte[] b) throws UnsupportedEncodingException {
-        System.out.println("Input size: " + b.length );
+        System.out.println("Input size: " + b.length);
         byte[] b64 = Base64.encodeBase64(b);
         return new String(b64, FORMAT);
     }
 
     public static String toBase64(File file) throws IOException {
 
-        InputStream is = new Base64InputStream(new FileInputStream(file), true, -1, null)          ;
+        InputStream is = new Base64InputStream(new FileInputStream(file), true, -1, null);
 
         try {
-            return IOUtils.toString(is, FORMAT)    ;
+            return IOUtils.toString(is, FORMAT);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }    finally {
-            is.close();
+        } finally {
+            IOUtils.closeQuietly(is);
         }
     }
 
- 
+
     public static String fromBase64(byte[] b64) throws UnsupportedEncodingException {
         byte[] b = Base64.decodeBase64(b64);
         return new String(b, FORMAT);
